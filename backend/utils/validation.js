@@ -14,7 +14,7 @@ export const validateSignup = ({ name, email, password, role }) => {
   }
 
   // Accept role in any case; normalize for the check
-  const normRole = role ? String(role).trim().toUpperCase() : '';
+  const normRole = role ? String(role).trim().toUpperCase() : 'USER';
   if (!normRole || !['USER', 'ADMIN'].includes(normRole)) {
     errors.push('Role must be USER or ADMIN');
   }
