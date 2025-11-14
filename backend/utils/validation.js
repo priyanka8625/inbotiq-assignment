@@ -13,7 +13,9 @@ export const validateSignup = ({ name, email, password, role }) => {
     errors.push('Password must be at least 6 characters long');
   }
 
-  if (!role || !['USER', 'ADMIN'].includes(role)) {
+  // Accept role in any case; normalize for the check
+  const normRole = role ? String(role).trim().toUpperCase() : '';
+  if (!normRole || !['USER', 'ADMIN'].includes(normRole)) {
     errors.push('Role must be USER or ADMIN');
   }
 
@@ -22,6 +24,7 @@ export const validateSignup = ({ name, email, password, role }) => {
     errors
   };
 };
+
 
 export const validateLogin = ({ email, password }) => {
   const errors = [];

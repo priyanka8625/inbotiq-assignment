@@ -12,6 +12,9 @@ const prisma = new PrismaClient();
 router.post('/signup', async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
+    
+    // Normalize role: allow null/undefined, accept any case, trim whitespace
+    role = role ? String(role).trim().toUpperCase() : 'USER';
 
     // Validation
     const validation = validateSignup({ name, email, password, role });
