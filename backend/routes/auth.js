@@ -11,19 +11,27 @@ const prisma = new PrismaClient();
 // SIGNUP
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    
-    // Normalize role: allow null/undefined, accept any case, trim whitespace
-    role = role ? String(role).trim().toUpperCase() : 'USER';
+    let { name, email, password, role } = req.body ?? {};
 
-    // Validation
+    // Defensive normalization of inputs
+    name = typeof name === 'string' ? name.trim() : '';
+    email = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    password = typeof password === 'string' ? password : '';
+
+    // Normalize role safely (only convert if it's a string)
+    role = typeof role === 'string' ? role.trim().toUpperCase() : 'USER';
+
+    // Basic validation (you can keep using validateSignup but re-run here for safety)
     const validation = validateSignup({ name, email, password, role });
     if (!validation.valid) {
       return res.status(400).json({ error: validation.errors[0] });
     }
 
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    // Check if user exists (use email in same case as lookup)
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
     if (existingUser) {
       return res.status(400).json({ error: 'Email already exists' });
     }
@@ -48,7 +56,7 @@ router.post('/signup', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'User created successfully',
       token,
       user: {
@@ -59,10 +67,29 @@ router.post('/signup', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ error: 'Signup failed' });
+    // Detailed error logging for debugging
+    console.error('Signup error (name, email):', req.body?.name, req.body?.email);
+    console.error('Error name:', error?.name);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
+
+    // If it's a Prisma unique constraint error (duplicate key), handle gracefully
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return res.status(400).json({ error: 'Unique constraint failed: a user with this email already exists' });
+      }
+    }
+
+    // In development, return the full error (helpful while debugging)
+    if (process.env.NODE_ENV === 'development') {
+      return res.status(500).json({ error: error?.message || 'Signup failed', stack: error?.stack });
+    }
+
+    // Generic production response
+    return res.status(500).json({ error: 'Signup failed' });
   }
 });
+
 
 // LOGIN
 router.post('/login', async (req, res) => {
