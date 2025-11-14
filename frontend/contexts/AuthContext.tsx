@@ -12,7 +12,7 @@ interface AuthContextType {
     name: string,
     email: string,
     password: string,
-    role: 'user' | 'admin'
+    role: 'USER' | 'ADMIN'
   ) => Promise<void>;
   logout: () => void;
 }
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     name: string,
     email: string,
     password: string,
-    role: 'user' | 'admin'
+    role: 'USER' | 'ADMIN'
   ) => {
     const { token: newToken, user: newUser } = await authService.signup({
       name,
